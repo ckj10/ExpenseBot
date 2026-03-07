@@ -140,7 +140,7 @@ food / family / personal / ignore
 
             c.execute("""
             UPDATE transactions
-            SET category=%s,processed=1
+            SET category=%s,processed=TRUE
             WHERE id=%s
             """,(category,tx))
 
