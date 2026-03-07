@@ -36,7 +36,7 @@ def save_transaction(msg,source,text):
     try:
         c.execute("""
         INSERT INTO transactions(date,source,raw,discord_msg_id)
-        VALUES(NOW(),?,?,?)
+        VALUES(NOW(),%s,%s,%s)
         """,(source,text,msg.id))
         conn.commit()
         return True
@@ -80,8 +80,8 @@ async def on_message(msg):
 
         c.execute("""
         UPDATE transactions
-        SET amount=?,merchant=?,type=?
-        WHERE discord_msg_id=?
+        SET amount=%s,merchant=%s,type=%s
+        WHERE discord_msg_id=%s
         """,(amount,merchant,tx_type,msg.id))
 
         conn.commit()
@@ -106,7 +106,7 @@ food / family / personal / ignore
 
             c.execute("""
             INSERT INTO pending(transaction_id,discord_prompt_id)
-            VALUES((SELECT id FROM transactions WHERE discord_msg_id=?),?)
+            VALUES((SELECT id FROM transactions WHERE discord_msg_id=%s),%s)
             """,(msg.id,prompt.id))
 
             conn.commit()
@@ -127,7 +127,7 @@ food / family / personal / ignore
         c.execute("""
         SELECT transaction_id
         FROM pending
-        WHERE discord_prompt_id=?
+        WHERE discord_prompt_id=%s
         """,(reply,))
 
         row=c.fetchone()
@@ -140,11 +140,11 @@ food / family / personal / ignore
 
             c.execute("""
             UPDATE transactions
-            SET category=?,processed=1
-            WHERE id=?
+            SET category=%s,processed=1
+            WHERE id=%s
             """,(category,tx))
 
-            c.execute("DELETE FROM pending WHERE transaction_id=?",(tx,))
+            c.execute("DELETE FROM pending WHERE transaction_id=%s",(tx,))
             conn.commit()
 
             await msg.add_reaction("✅")
