@@ -36,7 +36,7 @@ def save_transaction(msg,source,text):
     try:
         c.execute("""
         INSERT INTO transactions(date,source,raw,discord_msg_id)
-        VALUES(datetime('now'),?,?,?)
+        VALUES(NOW(),?,?,?)
         """,(source,text,msg.id))
         conn.commit()
         return True
