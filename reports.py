@@ -1,10 +1,12 @@
 import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
+import psycopg2
+import os
 
 def monthly_report():
 
-    conn=sqlite3.connect("expenses.db")
+    conn = psycopg2.connect(os.getenv("DATABASE_URL"))
 
     df=pd.read_sql("""
     SELECT category,SUM(amount) as total
