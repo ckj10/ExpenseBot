@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from parser import parse_message
 from reports import monthly_report
+import psycopg2
 
 load_dotenv()
 
@@ -29,7 +30,7 @@ bot=discord.Client(intents=intents)
 
 def save_transaction(msg,source,text):
 
-    conn=sqlite3.connect("expenses.db")
+    conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     c=conn.cursor()
 
     try:
@@ -74,7 +75,7 @@ async def on_message(msg):
         if not amount:
             return
 
-        conn=sqlite3.connect("expenses.db")
+        conn = psycopg2.connect(os.getenv("DATABASE_URL"))
         c=conn.cursor()
 
         c.execute("""
@@ -120,7 +121,7 @@ food / family / personal / ignore
 
         reply=msg.reference.message_id
 
-        conn=sqlite3.connect("expenses.db")
+        conn = psycopg2.connect(os.getenv("DATABASE_URL"))
         c=conn.cursor()
 
         c.execute("""
