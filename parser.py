@@ -14,8 +14,7 @@ def detect_transfer(text):
     "transfer",
     "duitnow",
     " to ",
-    "sent to",
-    "received from"
+    "sent to"
     ]
 
     return any(k in text for k in keywords)
