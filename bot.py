@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from parser import parse_message
 from reports import monthly_report
 import psycopg2
+from discord.ui import View, Button
 
 load_dotenv()
 
@@ -27,7 +28,48 @@ intents.message_content=True
 
 bot=discord.Client(intents=intents)
 
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user}")
+    
+class CategoryView(View):
 
+    def __init__(self, tx_id):
+        super().__init__(timeout=None)
+        self.tx_id = tx_id
+
+        categories = ["Food","Transport","Shopping","Ignore"]
+
+        for cat in categories:
+            button = Button(label=cat, style=discord.ButtonStyle.primary)
+            button.callback = self.make_callback(cat)
+            self.add_item(button)
+
+    def make_callback(self, category):
+
+        async def callback(interaction: discord.Interaction):
+
+            conn = psycopg2.connect(os.getenv("DATABASE_URL"))
+            c = conn.cursor()
+
+            if category != "Ignore":
+                c.execute("""
+                UPDATE transactions
+                SET category=%s, processed=TRUE
+                WHERE id=%s
+                """,(category,self.tx_id))
+
+            c.execute("DELETE FROM pending WHERE transaction_id=%s",(self.tx_id,))
+            conn.commit()
+            conn.close()
+
+            await interaction.response.send_message(
+                f"Saved category: {category}",
+                ephemeral=True
+            )
+
+        return callback
+        
 def save_transaction(msg,source,text):
 
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
@@ -92,16 +134,23 @@ async def on_message(msg):
 
             ch=bot.get_channel(int(GENERAL))
 
-            prompt=await ch.send(
+            c.execute("""
+            SELECT id FROM transactions WHERE discord_msg_id=%s
+            """,(msg.id,))
+            tx = c.fetchone()[0]
+            
+            view = CategoryView(tx)
+            
+            prompt = await ch.send(
             f"""
-Transfer detected
-
-Merchant: {merchant}
-Amount: RM{amount}
-
-Reply category:
-food / family / personal / ignore
-"""
+            Transfer detected
+            
+            Merchant: {merchant}
+            Amount: RM{amount}
+            
+            Choose category:
+            """,
+            view=view
             )
 
             c.execute("""
