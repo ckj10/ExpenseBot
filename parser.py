@@ -3,7 +3,8 @@ import re
 patterns=[
 re.compile(r"RM([\d\.]+)\s+to\s+(.+?)\s+is successful",re.I),
 re.compile(r"RM([\d\.]+)\s+spent at\s+(.+)",re.I),
-re.compile(r"RM([\d\.]+)\s+paid to\s+(.+)",re.I)
+re.compile(r"RM([\d\.]+)\s+paid to\s+(.+)",re.I),
+re.compile(r"paid\s+rm([\d\.]+)\s+for\s+(.+)",re.I)
 ]
 
 def detect_transfer(text):
