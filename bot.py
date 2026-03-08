@@ -32,17 +32,24 @@ bot=discord.Client(intents=intents)
 async def on_ready():
     print(f"Logged in as {bot.user}")
     
-class CategoryView(View):
-
-    def __init__(self, tx_id):
+class CategoryView(discord.ui.View):
+    def __init__(self):
         super().__init__(timeout=None)
-        self.tx_id = tx_id
 
-        categories = ["Food","Transport","Shopping","Ignore"]
+        for category in CATEGORIES:
+            button = discord.ui.Button(
+                label=category,
+                style=discord.ButtonStyle.primary,
+                custom_id=f"category_{category}"
+            )
 
-        for cat in categories:
-            button = Button(label=cat, style=discord.ButtonStyle.primary)
-            button.callback = self.make_callback(cat)
+            async def callback(interaction: discord.Interaction, cat=category):
+                await interaction.response.send_message(
+                    f"You selected **{cat}**",
+                    ephemeral=True
+                )
+
+            button.callback = callback
             self.add_item(button)
 
     def make_callback(self, category):
