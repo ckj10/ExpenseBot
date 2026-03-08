@@ -33,23 +33,20 @@ async def on_ready():
     print(f"Logged in as {bot.user}")
     
 class CategoryView(discord.ui.View):
-    def __init__(self):
+    def __init__(self, tx_id):
         super().__init__(timeout=None)
 
+        self.tx_id = tx_id
+
         for category in CATEGORIES:
+
             button = discord.ui.Button(
                 label=category,
-                style=discord.ButtonStyle.primary,
-                custom_id=f"category_{category}"
+                style=discord.ButtonStyle.primary
             )
 
-            async def callback(interaction: discord.Interaction, cat=category):
-                await interaction.response.send_message(
-                    f"You selected **{cat}**",
-                    ephemeral=True
-                )
+            button.callback = self.make_callback(category)
 
-            button.callback = callback
             self.add_item(button)
 
     def make_callback(self, category):
@@ -59,14 +56,17 @@ class CategoryView(discord.ui.View):
             conn = psycopg2.connect(os.getenv("DATABASE_URL"))
             c = conn.cursor()
 
-            if category != "Ignore":
-                c.execute("""
-                UPDATE transactions
-                SET category=%s, processed=TRUE
-                WHERE id=%s
-                """,(category,self.tx_id))
+            c.execute("""
+            UPDATE transactions
+            SET category=%s, processed=TRUE
+            WHERE id=%s
+            """, (category, self.tx_id))
 
-            c.execute("DELETE FROM pending WHERE transaction_id=%s",(self.tx_id,))
+            c.execute(
+                "DELETE FROM pending WHERE transaction_id=%s",
+                (self.tx_id,)
+            )
+
             conn.commit()
             conn.close()
 
