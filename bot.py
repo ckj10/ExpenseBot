@@ -212,6 +212,22 @@ async def on_message(msg):
         path=monthly_report()
 
         await msg.channel.send(file=discord.File(path))
-
+        
+    if msg.content.startswith("/ai"):
+    
+        cmd = msg.content.replace("/ai","").strip()
+    
+        conn = psycopg2.connect(os.getenv("DATABASE_URL"))
+        c = conn.cursor()
+    
+        c.execute("""
+        INSERT INTO ai_commands(command)
+        VALUES(%s)
+        """,(cmd,))
+    
+        conn.commit()
+        conn.close()
+    
+        await msg.channel.send("AI task queued.")
 
 bot.run(TOKEN)
