@@ -25,7 +25,7 @@ re.compile(r"RM([\d\.]+)\s+payment to\s+(.+)",re.I),
 
 # payment received (no merchant)
 re.compile(r"Payment of RM([\d\.]+)\s+is received", re.I),
-
+re.compile(r"RM([\d\.]+).*(?:to|at|for)\s+(.+)",re.I)
 ]
 
 
