@@ -1,5 +1,4 @@
 import discord
-import sqlite3
 import os
 from dotenv import load_dotenv
 from parser import parse_message
@@ -21,6 +20,15 @@ CATEGORIES=[
 "Food","Transport","Shopping","Housing",
 "Utilities","Tax","Parking","Entertainment",
 "Drinks","Transfer","Other"
+]
+
+MERCHANT_CHOICES=[
+"Transfer",
+"Petrol",
+"Top Up",
+"TNG Reload",
+"Cashback",
+"Other"
 ]
 
 intents=discord.Intents.default()
@@ -91,7 +99,48 @@ def save_transaction(msg,source,text):
         return True
     except:
         return False
+        
+class MerchantView(discord.ui.View):
 
+    def __init__(self, tx_id, amount):
+        super().__init__(timeout=None)
+
+        self.tx_id = tx_id
+        self.amount = amount
+
+        for merchant in MERCHANT_CHOICES:
+
+            button = discord.ui.Button(
+                label=merchant,
+                style=discord.ButtonStyle.secondary
+            )
+
+            button.callback = self.make_callback(merchant)
+
+            self.add_item(button)
+
+    def make_callback(self, merchant):
+
+        async def callback(interaction: discord.Interaction):
+
+            conn = psycopg2.connect(os.getenv("DATABASE_URL"))
+            c = conn.cursor()
+
+            c.execute("""
+            UPDATE transactions
+            SET merchant=%s
+            WHERE id=%s
+            """,(merchant,self.tx_id))
+
+            conn.commit()
+            conn.close()
+
+            await interaction.response.send_message(
+                f"Merchant set: {merchant}",
+                ephemeral=True
+            )
+
+        return callback
 
 @bot.event
 async def on_message(msg):
@@ -118,12 +167,41 @@ async def on_message(msg):
 
         if not inserted:
             return
-
+        
         amount,merchant,tx_type=parse_message(msg.content)
-
+        
         if not amount:
             return
+        
+        conn = psycopg2.connect(os.getenv("DATABASE_URL"))
+        c=conn.cursor()
+        
+        c.execute("""
+        SELECT id FROM transactions WHERE discord_msg_id=%s
+        """,(msg.id,))
+        
+        tx = c.fetchone()[0]
 
+        if not merchant:
+
+            ch=bot.get_channel(int(GENERAL))
+        
+            view = MerchantView(tx, amount)
+        
+            await ch.send(
+                f"""
+        Merchant not detected
+        
+        Amount: RM{amount}
+        
+        Select merchant:
+        """,
+                view=view
+            )
+        
+            conn.close()
+            return
+            
         conn = psycopg2.connect(os.getenv("DATABASE_URL"))
         c=conn.cursor()
 
