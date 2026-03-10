@@ -7,7 +7,7 @@ def monthly_report():
 
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
 
-    df = pd.read_sql("""
+    category_df = pd.read_sql("""
     SELECT category, SUM(amount) AS total
     FROM transactions
     WHERE date_trunc('month', date) = date_trunc('month', CURRENT_DATE)
@@ -15,31 +15,54 @@ def monthly_report():
     ORDER BY total DESC
     """, conn)
 
+    daily_df = pd.read_sql("""
+    SELECT DATE(date) as day, SUM(amount) as total
+    FROM transactions
+    WHERE date_trunc('month', date) = date_trunc('month', CURRENT_DATE)
+    GROUP BY day
+    ORDER BY day
+    """, conn)
+
     conn.close()
 
-    if df.empty:
+    if category_df.empty:
         raise Exception("No transactions this month")
 
-    plt.figure(figsize=(10,6))
+    plt.figure(figsize=(14,8))
 
-    bars = plt.bar(df["category"], df["total"])
-
-    plt.title("Monthly Spending by Category", fontsize=16)
-    plt.xlabel("Category")
-    plt.ylabel("Amount (RM)")
-
+    # --- Category Bar Chart ---
+    plt.subplot(2,2,1)
+    bars = plt.bar(category_df["category"], category_df["total"])
+    plt.title("Spending by Category")
     plt.xticks(rotation=30)
+    plt.ylabel("RM")
 
-    # add value labels
     for bar in bars:
-        height = bar.get_height()
+        h = bar.get_height()
         plt.text(
-            bar.get_x() + bar.get_width()/2,
-            height,
-            f"{height:.2f}",
-            ha='center',
-            va='bottom'
+            bar.get_x()+bar.get_width()/2,
+            h,
+            f"{h:.2f}",
+            ha="center"
         )
+
+    # --- Pie Chart ---
+    plt.subplot(2,2,2)
+    plt.pie(
+        category_df["total"],
+        labels=category_df["category"],
+        autopct="%1.1f%%",
+        startangle=140
+    )
+    plt.title("Spending Distribution")
+
+    # --- Daily Spending ---
+    plt.subplot(2,1,2)
+    plt.plot(daily_df["day"], daily_df["total"], marker="o")
+    plt.title("Daily Spending Trend")
+    plt.xlabel("Date")
+    plt.ylabel("RM")
+    plt.grid(True)
 
     plt.tight_layout()
 
