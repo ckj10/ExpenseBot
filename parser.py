@@ -5,6 +5,7 @@ re.compile(r"RM([\d\.]+)\s+to\s+(.+?)\s+is successful",re.I),
 re.compile(r"RM([\d\.]+)\s+spent at\s+(.+)",re.I),
 re.compile(r"RM([\d\.]+)\s+paid to\s+(.+)",re.I),
 re.compile(r"paid\s+rm([\d\.]+)\s+for\s+(.+)",re.I)
+re.compile(r"Payment of RM([\d\.]+)\s+is received", re.I)
 ]
 
 def detect_transfer(text):
