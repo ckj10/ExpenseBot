@@ -36,7 +36,6 @@ def detect_transfer(text):
     keywords=[
     "transfer",
     "duitnow",
-    " to ",
     "sent to"
     ]
 
