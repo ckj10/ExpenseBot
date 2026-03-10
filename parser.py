@@ -1,13 +1,31 @@
 import re
 
 patterns=[
+
+# GXBank / transfer
 re.compile(r"RM([\d\.]+)\s+to\s+(.+?)\s+is successful",re.I),
+
+# generic payments
 re.compile(r"RM([\d\.]+)\s+spent at\s+(.+)",re.I),
 re.compile(r"RM([\d\.]+)\s+paid to\s+(.+)",re.I),
 re.compile(r"paid\s+rm([\d\.]+)\s+for\s+(.+)",re.I),
+re.compile(r"You have paid RM([\d\.]+)\s+for\s+(.+)",re.I),
+
+# CIMB card charge
+re.compile(r"RM([\d\.]+)\s+is charged from your card .* to\s+(.+?)\.",re.I),
+
+# alternative CIMB format
+re.compile(r"RM([\d\.]+)\s+charged to your card .* at\s+(.+)",re.I),
+
+# another possible variant
+re.compile(r"RM([\d\.]+)\s+was charged .* to\s+(.+)",re.I),
+
+# TNG ewallet
+re.compile(r"RM([\d\.]+)\s+payment to\s+(.+)",re.I),
 
 # payment received (no merchant)
-re.compile(r"Payment of RM([\d\.]+)\s+is received", re.I)
+re.compile(r"Payment of RM([\d\.]+)\s+is received", re.I),
+
 ]
 
 
