@@ -188,9 +188,19 @@ async def on_message(msg):
         
         tx = row[0]
         
+        # save amount + type first
+        c.execute("""
+        UPDATE transactions
+        SET amount=%s,type=%s
+        WHERE id=%s
+        """,(amount,tx_type,tx))
+        
+        conn.commit()
+        
+        # now handle missing merchant
         if not merchant:
         
-            ch = bot.get_channel(int(GENERAL))
+            ch=bot.get_channel(int(GENERAL))
         
             view = MerchantView(tx, amount)
         
