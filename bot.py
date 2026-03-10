@@ -180,29 +180,28 @@ async def on_message(msg):
         SELECT id FROM transactions WHERE discord_msg_id=%s
         """,(msg.id,))
         
-        tx = c.fetchone()[0]
-
+        row = c.fetchone()
+        
+        if not row:
+            conn.close()
+            return
+        
+        tx = row[0]
+        
         if not merchant:
-
-            ch=bot.get_channel(int(GENERAL))
+        
+            ch = bot.get_channel(int(GENERAL))
         
             view = MerchantView(tx, amount)
         
             await ch.send(
-                f"""
-        Merchant not detected
-        
-        Amount: RM{amount}
-        
-        Select merchant:
-        """,
+                f"Merchant not detected\n\nAmount: RM{amount}\n\nSelect merchant:",
                 view=view
             )
         
             conn.close()
             return
             
-        conn = psycopg2.connect(os.getenv("DATABASE_URL"))
         c=conn.cursor()
 
         c.execute("""
