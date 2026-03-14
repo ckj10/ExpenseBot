@@ -174,6 +174,7 @@ async def scan_channels_for_missing():
 
         async for msg in channel.history(limit=100):
 
+            # skip only this bot
             if msg.author.id == bot.user.id:
                 continue
 
@@ -209,6 +210,12 @@ async def scan_channels_for_missing():
             """,(source,msg.content,msg.id,amount,merchant,tx_type))
 
             added+=1
+
+            # react to the processed message
+            try:
+                await msg.add_reaction("✅")
+            except:
+                pass
 
     conn.commit()
     conn.close()
