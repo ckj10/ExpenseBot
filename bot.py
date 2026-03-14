@@ -141,7 +141,24 @@ class MerchantView(discord.ui.View):
             )
 
         return callback
+        
+async def check_unprocessed():
 
+    conn = psycopg2.connect(os.getenv("DATABASE_URL"))
+    c = conn.cursor()
+
+    c.execute("""
+    SELECT id, amount, merchant, type
+    FROM transactions
+    WHERE processed IS NOT TRUE
+    """)
+
+    rows = c.fetchall()
+
+    conn.close()
+
+    return rows
+    
 @bot.event
 async def on_message(msg):
 
@@ -299,6 +316,53 @@ async def on_message(msg):
         path=monthly_report()
 
         await msg.channel.send(file=discord.File(path))
+
+    if msg.content == "/check":
+
+    rows = await check_unprocessed()
+
+    if not rows:
+        await msg.channel.send("No unprocessed transactions.")
+        return
+
+    ch = bot.get_channel(int(GENERAL))
+
+    for tx_id, amount, merchant, tx_type in rows:
+
+        # merchant missing
+        if not merchant:
+
+            view = MerchantView(tx_id, amount)
+
+            await ch.send(
+                            f"""
+            Unprocessed transaction
+            
+            Amount: RM{amount}
+            
+            Merchant missing — choose one:
+            """,
+                            view=view
+                        )
+
+        # category missing
+        else:
+
+            view = CategoryView(tx_id)
+
+            await ch.send(
+                            f"""
+            Unprocessed transaction
+            
+            Merchant: {merchant}
+            Amount: RM{amount}
+            
+            Choose category:
+            """,
+                            view=view
+                        )
+
+    await msg.channel.send(f"Reopened {len(rows)} unprocessed transactions.")
         
     if msg.content.startswith("/ai"):
     
