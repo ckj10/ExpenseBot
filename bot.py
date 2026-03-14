@@ -174,7 +174,7 @@ async def scan_channels_for_missing():
 
         async for msg in channel.history(limit=100):
 
-            if msg.author.bot:
+            if msg.author.id == bot.user.id:
                 continue
 
             # check if message already saved
