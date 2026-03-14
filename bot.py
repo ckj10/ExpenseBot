@@ -158,6 +158,62 @@ async def check_unprocessed():
     conn.close()
 
     return rows
+
+async def scan_channels_for_missing():
+
+    channels = [GX, CIMB, TNG]
+
+    conn = psycopg2.connect(os.getenv("DATABASE_URL"))
+    c = conn.cursor()
+
+    added = 0
+
+    for ch_id in channels:
+
+        channel = bot.get_channel(int(ch_id))
+
+        async for msg in channel.history(limit=100):
+
+            if msg.author.bot:
+                continue
+
+            # check if message already saved
+            c.execute("""
+            SELECT 1 FROM transactions
+            WHERE discord_msg_id=%s
+            """,(msg.id,))
+
+            if c.fetchone():
+                continue
+
+            # detect source
+            source=None
+            if str(msg.channel.id)==GX:
+                source="gxbank"
+            if str(msg.channel.id)==CIMB:
+                source="cimb"
+            if str(msg.channel.id)==TNG:
+                source="tng"
+
+            if not source:
+                continue
+
+            amount,merchant,tx_type=parse_message(msg.content)
+
+            if not amount:
+                continue
+
+            c.execute("""
+            INSERT INTO transactions(date,source,raw,discord_msg_id,amount,merchant,type)
+            VALUES(NOW(),%s,%s,%s,%s,%s,%s)
+            """,(source,msg.content,msg.id,amount,merchant,tx_type))
+
+            added+=1
+
+    conn.commit()
+    conn.close()
+
+    return added
     
 @bot.event
 async def on_message(msg):
@@ -319,50 +375,58 @@ async def on_message(msg):
 
     if msg.content == "/check":
 
-        rows = await check_unprocessed()
+        await msg.channel.send("Scanning channels for missing transactions...")
     
-        if not rows:
-            await msg.channel.send("No unprocessed transactions.")
-            return
+        added = await scan_channels_for_missing()
+    
+        rows = await check_unprocessed()
     
         ch = bot.get_channel(int(GENERAL))
     
+        reopened = 0
+    
         for tx_id, amount, merchant, tx_type in rows:
     
-            # merchant missing
             if not merchant:
     
                 view = MerchantView(tx_id, amount)
     
                 await ch.send(
-                                f"""
-                Unprocessed transaction
-                
-                Amount: RM{amount}
-                
-                Merchant missing — choose one:
-                """,
-                                view=view
-                            )
+                    f"""
+    Unprocessed transaction
     
-            # category missing
+    Amount: RM{amount}
+    
+    Merchant missing — choose one:
+    """,
+                    view=view
+                )
+    
+                reopened+=1
+    
             else:
     
                 view = CategoryView(tx_id)
     
                 await ch.send(
-                                f"""
-                Unprocessed transaction
-                
-                Merchant: {merchant}
-                Amount: RM{amount}
-                
-                Choose category:
-                """,
-                                view=view
-                            )
+                    f"""
+    Unprocessed transaction
     
-        await msg.channel.send(f"Reopened {len(rows)} unprocessed transactions.")
+    Merchant: {merchant}
+    Amount: RM{amount}
+    
+    Choose category:
+    """,
+                    view=view
+                )
+    
+                reopened+=1
+    
+        await msg.channel.send(
+            f"Scan complete\n"
+            f"Transactions added: {added}\n"
+            f"Unprocessed reopened: {reopened}"
+        )
         
     if msg.content.startswith("/ai"):
     
