@@ -3,7 +3,7 @@ import re
 patterns=[
 
 # GXBank / transfer
-re.compile(r"RM([\d\.]+)\s+to\s+(.+?)\s+is successful",re.I),
+re.compile(r"RM([\d\.]+)\s+to\s+(.+?)\s+(?:is|was)\s+successful\.?", re.I),
 
 # generic payments
 re.compile(r"RM([\d\.]+)\s+spent at\s+(.+)",re.I),
