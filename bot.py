@@ -227,7 +227,7 @@ async def on_message(msg):
 
     # skip only this bot
     if msg.author.id == bot.user.id:
-        continue
+        return
 
     channel=str(msg.channel.id)
 
