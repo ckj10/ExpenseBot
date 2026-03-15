@@ -225,8 +225,9 @@ async def scan_channels_for_missing():
 @bot.event
 async def on_message(msg):
 
-    if msg.author.bot:
-        return
+    # skip only this bot
+    if msg.author.id == bot.user.id:
+        continue
 
     channel=str(msg.channel.id)
 
